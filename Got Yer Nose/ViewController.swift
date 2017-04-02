@@ -40,6 +40,9 @@ class ViewController: UIViewControllerX, UIImagePickerControllerDelegate, UINavi
     var grabbedImage:UIImage!
     var grabbedFace:MPOFace!
     
+    var undos:[UIImage] = []
+    var redos:[UIImage] = []
+    
     @IBOutlet weak var baseFailedText: UILabel!
     @IBAction func switchImageClick(_ sender: Any) {
         switchingImage = true
@@ -55,11 +58,32 @@ class ViewController: UIViewControllerX, UIImagePickerControllerDelegate, UINavi
         chooseImageText.text = "Choose an Image to Grab Features From"
     }
     @IBAction func downloadClick(_ sender: Any) {
-        Toast.makeText(self, "Downloading image...", Toast.LENGTH_SHORT)
+        Toast.makeText(self, "Saving image...", Toast.LENGTH_SHORT)
+        UIImageWriteToSavedPhotosAlbum(mainImageView.image!, self, #selector(self.imageSaved(_:didFinishSavingWithError:contextInfo:)), nil)
+    }
+    //added as iOS callback func
+    func imageSaved(_ image: UIImage, didFinishSavingWithError error: NSError?, contextInfo: UnsafeRawPointer) {
+        if error == nil{
+            Async.toast("Successfully saved image.", true);
+        }else{
+            Async.toast("Failed to save image.", true);
+        }
     }
     @IBAction func undoClick(_ sender: Any) {
+        redo.isEnabled = true
+        redos.append(mainImageView.image!)
+        mainImageView.image = undos.popLast()!
+        if undos.isEmpty{
+            undo.isEnabled = false
+        }
     }
     @IBAction func redoClick(_ sender: Any) {
+        undo.isEnabled = true
+        undos.append(mainImageView.image!)
+        mainImageView.image = redos.popLast()!
+        if redos.isEmpty{
+            redo.isEnabled = false
+        }
     }
     @IBAction func chooseFromGalleryClick(_ sender: Any) {
         
@@ -115,6 +139,9 @@ class ViewController: UIViewControllerX, UIImagePickerControllerDelegate, UINavi
             image = UIGraphicsGetImageFromCurrentImageContext() ?? image
             UIGraphicsEndImageContext()
         }, afterTask: {
+            self.undo.isEnabled = true
+            self.undos.append(self.mainImageView.image!)
+            
             self.mainImageView.image = image
             self.chooseImageView.isHidden = true
             self.selectFeaturesView.isHidden = true
@@ -134,7 +161,7 @@ class ViewController: UIViewControllerX, UIImagePickerControllerDelegate, UINavi
             (subview as! UIButton).imageView?.contentMode = .scaleAspectFit
         }
         
-        didSelectNewBaseImage(image: Files.readImage("currentImage", #imageLiteral(resourceName: "rupaul-allstars-750x563")))
+        didSelectNewBaseImage(image: Files.readImage("currentImage", #imageLiteral(resourceName: "rupaul")))
     }
     
     func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [String : Any]) {
@@ -168,13 +195,15 @@ class ViewController: UIViewControllerX, UIImagePickerControllerDelegate, UINavi
         baseFailedView.isHidden = true
         undo.isEnabled = false
         redo.isEnabled = false
+        undos = []
+        redos = []
         
         var image = image
         
-        if image.size.width > image.size.height && image.size.width > 1024{
-            image = image.scaleImage(toSize: CGSize(width: 1024, height: 1024 * image.size.height / image.size.width))
-        }else if image.size.height > image.size.width && image.size.height > 1024{
-            image = image.scaleImage(toSize: CGSize(width: 1024 * image.size.width / image.size.height, height: 1024))
+        if image.size.width > image.size.height && image.size.width > 2048{
+            image = image.scaleImage(toSize: CGSize(width: 2048, height: 2048 * image.size.height / image.size.width))
+        }else if image.size.height > image.size.width && image.size.height > 2048{
+            image = image.scaleImage(toSize: CGSize(width: 2048 * image.size.width / image.size.height, height: 2048))
         }
         
         let _ = detectionClient?.detect(with: UIImageJPEGRepresentation(image, 1)!, returnFaceId: false, returnFaceLandmarks: true, returnFaceAttributes: [MPOFaceAttributeTypeHeadPose.rawValue], completionBlock: { (faces, error) in
@@ -183,14 +212,9 @@ class ViewController: UIViewControllerX, UIImagePickerControllerDelegate, UINavi
                     if faces.count == 0{
                         self.baseImageFailed(message: "No faces were detected.\nPlease try a new base image\nfrom your gallery.")
                     }else{
-                        let face = faces.first!
                         self.baseFace = faces.first!
                         self.mainImageView.image = image
-                        
-                        print("Nic Cage is located at (l,t,w,h) = (" + face.faceRectangle.left.description + "," + face.faceRectangle.top.description + "," + face.faceRectangle.width.description + "," + face.faceRectangle.height.description + ")")
-                        print("roll, pitch, yaw: " + face.attributes.headPose.roll.description + "," + face.attributes.headPose.pitch.description + "," + face.attributes.headPose.yaw.description)
-                        let eyeRect = CGRect(x: CGFloat(face.faceLandmarks.eyeLeftOuter.x), y: CGFloat(face.faceLandmarks.eyeLeftTop.y), width: CGFloat(face.faceLandmarks.eyeLeftInner.x) - CGFloat(face.faceLandmarks.eyeLeftOuter.x), height: CGFloat(face.faceLandmarks.eyeLeftBottom.y) - CGFloat(face.faceLandmarks.eyeLeftTop.y))
-                        self.mainImageView.image = self.drawRectangleOnImage(image: image, rect: eyeRect/*CGRect(faceRect: face.faceRectangle)*/, angle: 0/*CGFloat(face.attributes.headPose.roll) * CGFloat.pi / 180*/)
+                        Files.writeImage("currentImage", image)
                     }
                 }else{
                     self.baseImageFailed(message: "Failed to initialize face detection.\nPlease select an image from your gallery\nto try again.")
@@ -213,10 +237,10 @@ class ViewController: UIViewControllerX, UIImagePickerControllerDelegate, UINavi
         
         var image = image
         
-        if image.size.width > image.size.height && image.size.width > 1024{
-            image = image.scaleImage(toSize: CGSize(width: 1024, height: 1024 * image.size.height / image.size.width))
-        }else if image.size.height > image.size.width && image.size.height > 1024{
-            image = image.scaleImage(toSize: CGSize(width: 1024 * image.size.width / image.size.height, height: 1024))
+        if image.size.width > image.size.height && image.size.width > 2048{
+            image = image.scaleImage(toSize: CGSize(width: 2048, height: 2048 * image.size.height / image.size.width))
+        }else if image.size.height > image.size.width && image.size.height > 2048{
+            image = image.scaleImage(toSize: CGSize(width: 2048 * image.size.width / image.size.height, height: 2048))
         }
         
         let _ = detectionClient?.detect(with: UIImageJPEGRepresentation(image, 1)!, returnFaceId: false, returnFaceLandmarks: true, returnFaceAttributes: [MPOFaceAttributeTypeHeadPose.rawValue], completionBlock: { (faces, error) in
@@ -245,45 +269,98 @@ class ViewController: UIViewControllerX, UIImagePickerControllerDelegate, UINavi
     }
     
     func applyFeature(_ featureNum:Int, _ context:CGContext){
+        let originCoords = coordinatesOfFeature(featureNum, on: grabbedFace)
+        let destinationCoords = coordinatesOfFeature(featureNum, on: baseFace)
         
-    }
-    
-    func coordinatesOfFeature(_ featureNum:Int, on face:MPOFace){
-        
-    }
-    
-    func drawRectangleOnImage(image: UIImage, rect: CGRect, angle:CGFloat) -> UIImage {
-        let imageSize = image.size
+        let imageSize = originCoords.size
         let scale: CGFloat = 0
         
         UIGraphicsBeginImageContextWithOptions(imageSize, false, scale)
-        let context = UIGraphicsGetCurrentContext()!
-        
-        image.draw(at: .zero)
-        //Color("#44ac1997").setFill()
-        //UIRectFill(rect)
+        let newContext = UIGraphicsGetCurrentContext()!
+        newContext.translateBy(x: originCoords.size.width / 2, y: originCoords.size.height / 2)
+        newContext.rotate(by: -originCoords.rotation)
+        grabbedImage.draw(at: .zero - originCoords.center)
+        let snippet = UIGraphicsGetImageFromCurrentImageContext()!
+        UIGraphicsPopContext()
         
         context.saveGState();
+        context.translateBy(x: destinationCoords.center.x, y: destinationCoords.center.y)
+        context.rotate(by: destinationCoords.rotation)
+        snippet.draw(in: CGRect(origin: CGPoint(x: -destinationCoords.size.width / 2, y: -destinationCoords.size.height / 2), size: destinationCoords.size))
+        context.restoreGState()
+    }
+    
+    func coordinatesOfFeature(_ featureNum:Int, on face:MPOFace)->(center:CGPoint, size:CGSize, rotation:CGFloat){
+        var center:CGPoint!
+        var size:CGSize!
+        var rotation:CGFloat!
         
-        let halfWidth = rect.width / 2.0;
-        let halfHeight = rect.height / 2.0;
-        let center = CGPoint(x: rect.origin.x + halfWidth, y: rect.origin.y + halfHeight);
+        switch featureNum{
+        case 1: //left eyebrow
+            let p1 = CGPoint(x: CGFloat(face.faceLandmarks.eyebrowLeftOuter.x), y: CGFloat(face.faceLandmarks.eyebrowLeftOuter.y))
+            let p2 = CGPoint(x: CGFloat(face.faceLandmarks.eyebrowLeftInner.x), y: CGFloat(face.faceLandmarks.eyebrowLeftInner.y))
+            let a = (p1 - p2) / 8
+            center = (p1 + p2) / 2 + CGPoint(x: a.y, y: a.x)
+            let w = hypot(p2 - p1) * 1.4
+            size = CGSize(width: w, height: w / 4)
+            rotation = atan((p2.y - p1.y) / (p2.x - p1.x))
+            break
+        case 2: //right eyebrow
+            let p1 = CGPoint(x: CGFloat(face.faceLandmarks.eyebrowRightInner.x), y: CGFloat(face.faceLandmarks.eyebrowRightInner.y))
+            let p2 = CGPoint(x: CGFloat(face.faceLandmarks.eyebrowRightOuter.x), y: CGFloat(face.faceLandmarks.eyebrowRightOuter.y))
+            let a = (p1 - p2) / 8
+            center = (p1 + p2) / 2 + CGPoint(x: a.y, y: a.x)
+            let w = hypot(p2 - p1) * 1.4
+            size = CGSize(width: w, height: w / 4)
+            rotation = atan((p2.y - p1.y) / (p2.x - p1.x))
+            break
+        case 3: //left eye
+            let p1 = CGPoint(x: CGFloat(face.faceLandmarks.eyeLeftOuter.x), y: CGFloat(face.faceLandmarks.eyeLeftOuter.y))
+            let p2 = CGPoint(x: CGFloat(face.faceLandmarks.eyeLeftInner.x), y: CGFloat(face.faceLandmarks.eyeLeftInner.y))
+            let a = (p1 - p2) / 12
+            center = (p1 + p2) / 2 + CGPoint(x: a.y, y: a.x)
+            let w = hypot(p2 - p1) * 1.5
+            size = CGSize(width: w, height: w / 2)
+            rotation = atan((p2.y - p1.y) / (p2.x - p1.x))
+            break
+        case 4: //right eye
+            let p1 = CGPoint(x: CGFloat(face.faceLandmarks.eyeRightInner.x), y: CGFloat(face.faceLandmarks.eyeRightInner.y))
+            let p2 = CGPoint(x: CGFloat(face.faceLandmarks.eyeRightOuter.x), y: CGFloat(face.faceLandmarks.eyeRightOuter.y))
+            let a = (p1 - p2) / 12
+            center = (p1 + p2) / 2 + CGPoint(x: a.y, y: a.x)
+            let w = hypot(p2 - p1) * 1.5
+            size = CGSize(width: w, height: w / 2)
+            rotation = atan((p2.y - p1.y) / (p2.x - p1.x))
+            break
+        case 5: //nose
+            let p1 = CGPoint(x: CGFloat(face.faceLandmarks.noseLeftAlarOutTip.x), y: CGFloat(face.faceLandmarks.noseLeftAlarOutTip.y))
+            let p2 = CGPoint(x: CGFloat(face.faceLandmarks.noseRightAlarOutTip.x), y: CGFloat(face.faceLandmarks.noseRightAlarOutTip.y))
+            let p3 = CGPoint(x: CGFloat(face.faceLandmarks.eyeLeftInner.x), y: CGFloat(face.faceLandmarks.eyeLeftInner.y))
+            let p4 = CGPoint(x: CGFloat(face.faceLandmarks.eyeRightInner.x), y: CGFloat(face.faceLandmarks.eyeRightInner.y))
+            let p12 = (p1 + p2) / 2
+            let p34 = (p3 + p4) / 2
+            center = (p34 * 0.7 + p12 * 1.3) / 2
+            let w = hypot(p2 - p1) * 1.2
+            let h = hypot(p12 - p34) * 1.2
+            size = CGSize(width: w, height: h)
+            rotation = atan(-(p34.x - p12.x) / (p34.y - p12.y))
+            break
+        case 6: //mouth
+            let p1 = CGPoint(x: CGFloat(face.faceLandmarks.mouthLeft.x), y: CGFloat(face.faceLandmarks.mouthLeft.y))
+            let p2 = CGPoint(x: CGFloat(face.faceLandmarks.mouthRight.x), y: CGFloat(face.faceLandmarks.mouthRight.y))
+            let p3 = CGPoint(x: CGFloat(face.faceLandmarks.upperLipTop.x), y: CGFloat(face.faceLandmarks.upperLipTop.y))
+            let p4 = CGPoint(x: CGFloat(face.faceLandmarks.underLipBottom.x), y: CGFloat(face.faceLandmarks.underLipBottom.y))
+            //let a = (p2 - p1) / 8
+            center = (p1 + p2 + p3 * 0.5 + p4 * 1.5) / 4
+            let w = hypot(p2 - p1) * 1.5
+            let h = hypot(p4 - p3) * 1.2
+            size = CGSize(width: w, height: h)
+            rotation = atan((p2.y - p1.y) / (p2.x - p1.x))
+            break
+        default: break
+        }
         
-        // Move to the center of the rectangle:
-        context.translateBy(x: center.x, y: center.y);
-        // Rotate:
-        context.rotate(by: angle);
-        // Draw the rectangle centered about the center:
-        let newRect = CGRect(x:-halfWidth, y:-halfHeight, width:rect.width, height:rect.height);
-        context.addRect(newRect);
-        context.setStrokeColor(Color.yellow.cgColor)
-        context.strokePath();
-        
-        context.restoreGState();
-        
-        let newImage = UIGraphicsGetImageFromCurrentImageContext() ?? image
-        UIGraphicsEndImageContext()
-        return newImage
+        return (center, size, rotation)
     }
 
 }

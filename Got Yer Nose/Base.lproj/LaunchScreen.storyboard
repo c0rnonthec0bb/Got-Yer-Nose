@@ -1,7 +1,11 @@
-<?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="11134" systemVersion="15F34" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" launchScreen="YES" useTraitCollections="YES" colorMatched="YES" initialViewController="01J-lp-oVM">
+<?xml version="1.0" encoding="UTF-8"?>
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="12118" systemVersion="16E195" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" launchScreen="YES" useTraitCollections="YES" colorMatched="YES" initialViewController="01J-lp-oVM">
+    <device id="retina4_7" orientation="portrait">
+        <adaptation id="fullscreen"/>
+    </device>
     <dependencies>
-        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="11106"/>
+        <deployment identifier="iOS"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="12086"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <scenes>
@@ -16,12 +20,46 @@
                     <view key="view" contentMode="scaleToFill" id="Ze5-6b-2t3">
                         <rect key="frame" x="0.0" y="0.0" width="375" height="667"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <subviews>
+                            <imageView userInteractionEnabled="NO" contentMode="scaleAspectFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="Logo" translatesAutoresizingMaskIntoConstraints="NO" id="cpr-LT-4Kz">
+                                <rect key="frame" x="59" y="95" width="256" height="192"/>
+                                <constraints>
+                                    <constraint firstAttribute="width" constant="256" id="FHl-gz-13R"/>
+                                    <constraint firstAttribute="height" constant="192" id="fS8-0V-iMS"/>
+                                </constraints>
+                            </imageView>
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="featuring technology from" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="wi1-ln-4A6">
+                                <rect key="frame" x="81" y="323" width="214" height="21"/>
+                                <fontDescription key="fontDescription" type="boldSystem" pointSize="17"/>
+                                <color key="textColor" white="0.33333333333333331" alpha="1" colorSpace="calibratedWhite"/>
+                                <nil key="highlightedColor"/>
+                            </label>
+                            <imageView userInteractionEnabled="NO" contentMode="scaleAspectFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="MSAzure" translatesAutoresizingMaskIntoConstraints="NO" id="zCo-l0-O6y">
+                                <rect key="frame" x="59" y="380" width="256" height="128"/>
+                                <constraints>
+                                    <constraint firstAttribute="height" constant="128" id="If2-2K-S0v"/>
+                                    <constraint firstAttribute="width" constant="256" id="bKc-bK-pdg"/>
+                                </constraints>
+                            </imageView>
+                        </subviews>
                         <color key="backgroundColor" red="1" green="1" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                        <constraints>
+                            <constraint firstItem="zCo-l0-O6y" firstAttribute="top" secondItem="wi1-ln-4A6" secondAttribute="bottom" constant="36" id="g3H-Qs-bAz"/>
+                            <constraint firstItem="wi1-ln-4A6" firstAttribute="centerY" secondItem="Ze5-6b-2t3" secondAttribute="centerY" id="gVQ-bq-gES"/>
+                            <constraint firstItem="zCo-l0-O6y" firstAttribute="centerX" secondItem="Ze5-6b-2t3" secondAttribute="centerX" id="m3w-iv-bAy"/>
+                            <constraint firstItem="wi1-ln-4A6" firstAttribute="top" secondItem="cpr-LT-4Kz" secondAttribute="bottom" constant="36" id="mQP-LJ-M3E"/>
+                            <constraint firstItem="wi1-ln-4A6" firstAttribute="centerX" secondItem="Ze5-6b-2t3" secondAttribute="centerX" id="n0d-Eg-SDI"/>
+                            <constraint firstItem="cpr-LT-4Kz" firstAttribute="centerX" secondItem="Ze5-6b-2t3" secondAttribute="centerX" id="uAB-bL-LCV"/>
+                        </constraints>
                     </view>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="iYj-Kq-Ea1" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="53" y="375"/>
+            <point key="canvasLocation" x="52" y="374.66266866566718"/>
         </scene>
     </scenes>
+    <resources>
+        <image name="Logo" width="1024" height="768"/>
+        <image name="MSAzure" width="400" height="300"/>
+    </resources>
 </document>

@@ -9,6 +9,12 @@
 import Foundation
 import ProjectOxfordFace
 
+extension CGRect{
+    init(faceRect:MPOFaceRectangle){
+        self.init(x: CGFloat(faceRect.left), y: CGFloat(faceRect.top), width: CGFloat(faceRect.width), height: CGFloat(faceRect.height))
+    }
+}
+
 class FaceAPI:AnyObject {
     // Detect faces
     
